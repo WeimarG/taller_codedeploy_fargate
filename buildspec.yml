@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 994617978174.dkr.ecr.us-east-2.amazonaws.com
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...          
+      - docker build -t python_application:latest .
+      - docker tag python_application:latest 994617978174.dkr.ecr.us-east-2.amazonaws.com/python_application_ecr:latest
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push 994617978174.dkr.ecr.us-east-2.amazonaws.com/python_application_ecr:latest
+      - echo Writing Image Definitions file...
+      - printf '[{"name":"Container_python","imageUri":"994617978174.dkr.ecr.us-east-2.amazonaws.com/python_application_ecr:latest"}]' > imagedefinitions.json
+      - printf '{"ImageURI":"994617978174.dkr.ecr.us-east-2.amazonaws.com/python_application_ecr:latest"}' > imageDetail.json
+      - cat imagedefinitions.json 
+artifacts:
+  files:
+    - '**/*'
+    - imagedefinitions.json
+    - imageDetail.json
+  secondary-artifacts:
+    DefinitionArtifact:
+      files:
+        - appspec.yaml
+        - taskdef.json
+    ImageArtifact:
+      files:
+        - imageDetail.json
